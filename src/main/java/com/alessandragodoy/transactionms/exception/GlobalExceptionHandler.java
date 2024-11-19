@@ -5,6 +5,9 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 
+/**
+ * Global exception handler for handling custom exceptions.
+ */
 @ControllerAdvice
 public class GlobalExceptionHandler {
 	@ExceptionHandler(AccountNotFoundException.class)

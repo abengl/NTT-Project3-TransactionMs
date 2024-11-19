@@ -16,6 +16,10 @@ import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
+/**
+ * Implementation of the TransactionService interface.
+ * This service handles the business logic for managing transactions.
+ */
 @Service
 @RequiredArgsConstructor
 public class TransactionServiceImpl implements TransactionService {
@@ -108,6 +112,14 @@ public class TransactionServiceImpl implements TransactionService {
 				});
 	}
 
+	/* Helper methods */
+
+	/**
+	 * Retrieves the balance of the specified account.
+	 *
+	 * @param accountNumber the account number to retrieve the balance for
+	 * @return a Mono emitting the account balance
+	 */
 	private Mono<Double> getAccountBalance(String accountNumber) {
 		return webClient.get()
 				.uri("/balance/{accountNumber}", accountNumber)
@@ -116,7 +128,12 @@ public class TransactionServiceImpl implements TransactionService {
 				.doOnError(error -> System.err.println("Error al obtener el balance: " + error.getMessage()));
 	}
 
-	/* Helper methods */
+	/**
+	 * Verifies if the specified account number exists.
+	 *
+	 * @param accountNumber the account number to verify
+	 * @return a Mono emitting true if the account exists, false otherwise
+	 */
 	private Mono<Boolean> verifyAccountNumber(String accountNumber) {
 		return webClient.get()
 				.uri("/verify/{accountNumber}", accountNumber)
@@ -126,6 +143,13 @@ public class TransactionServiceImpl implements TransactionService {
 						error -> System.err.println("Error al verificar el número de cuenta: " + error.getMessage()));
 	}
 
+	/**
+	 * Updates the balance of the specified account.
+	 *
+	 * @param accountNumber the account number to update the balance for
+	 * @param amount        the amount to update the balance by
+	 * @return a Mono indicating completion
+	 */
 	private Mono<Void> updateAccountBalance(String accountNumber, Double amount) {
 		return webClient.patch()
 				.uri("/update/{accountNumber}?amount={amount}", accountNumber, amount)
@@ -133,5 +157,6 @@ public class TransactionServiceImpl implements TransactionService {
 				.bodyToMono(Void.class)
 				.doOnError(error -> System.err.println("Error al actualizar el balance: " + error.getMessage()));
 	}
+
 }
 

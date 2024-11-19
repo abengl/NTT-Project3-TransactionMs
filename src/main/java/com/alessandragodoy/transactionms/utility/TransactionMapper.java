@@ -12,6 +12,9 @@ import java.time.Instant;
 import java.util.Date;
 import java.util.Optional;
 
+/**
+ * Mapper class for converting between Transaction entities and various DTOs.
+ */
 @Component
 public class TransactionMapper {
 

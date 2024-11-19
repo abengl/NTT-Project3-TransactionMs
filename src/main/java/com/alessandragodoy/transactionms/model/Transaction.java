@@ -15,6 +15,7 @@ import java.util.Date;
 
 /**
  * Represents a transaction in the banking system.
+ * This class is used to store transaction details such as account information, transaction type, amount, and date.
  */
 @Data
 @Builder
@@ -22,30 +23,30 @@ import java.util.Date;
 @AllArgsConstructor
 @Document(collection = "transaction")
 public class Transaction {
-    @Id
-    private String id;
+	@Id
+	private String id;
 
-    @Field("primary_account")
-    private String primaryAccount;
+	@Field("primary_account")
+	private String primaryAccount;
 
-    @NotNull
-    @Field("transaction_type")
-    private TransactionType transactionType;
+	@NotNull
+	@Field("transaction_type")
+	private TransactionType transactionType;
 
-    @NotNull
-    @DecimalMin(value = "0.0", inclusive = false, message = "Transaction amount must be greater than zero.")
-    @Field("amount")
-    private Double amount;
+	@NotNull
+	@DecimalMin(value = "0.0", inclusive = false, message = "Transaction amount must be greater than zero.")
+	@Field("amount")
+	private Double amount;
 
-    @NotNull
-    @DateTimeFormat(iso= DateTimeFormat.ISO.DATE_TIME)
-    @Field("date")
-    private Date date;
+	@NotNull
+	@DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME)
+	@Field("date")
+	private Date date;
 
-    @NotNull
-    @Field("origin_account")
-    private String originAccount;
+	@NotNull
+	@Field("origin_account")
+	private String originAccount;
 
-    @Field("destination_account")
-    private String destinationAccount;
+	@Field("destination_account")
+	private String destinationAccount;
 }

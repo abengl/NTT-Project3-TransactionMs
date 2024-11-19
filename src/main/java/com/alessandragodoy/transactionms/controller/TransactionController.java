@@ -11,6 +11,9 @@ import org.springframework.web.bind.annotation.*;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
+/**
+ * Controller for handling transaction-related requests.
+ */
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/api/transactions")
@@ -26,10 +29,12 @@ public class TransactionController {
 	public ResponseEntity<Mono<TransactionDTO>> registerDeposit(@RequestBody DepositRequestDTO depositRequest) {
 		return ResponseEntity.ok(transactionService.registerDeposit(depositRequest));
 	}
+
 	@PostMapping("/withdraw")
 	public ResponseEntity<Mono<TransactionDTO>> registerWithdraw(@RequestBody WithdrawRequestDTO withdrawRequest) {
 		return ResponseEntity.ok(transactionService.registerWithdraw(withdrawRequest));
 	}
+
 	@PostMapping("/transfer")
 	public ResponseEntity<Mono<TransactionDTO>> registerTransfer(@RequestBody TransferRequestDTO transferRequest) {
 		return ResponseEntity.ok(transactionService.registerTransfer(transferRequest));
