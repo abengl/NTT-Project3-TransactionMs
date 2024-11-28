@@ -6,15 +6,16 @@ import com.alessandragodoy.transactionms.controller.dto.TransferRequestDTO;
 import com.alessandragodoy.transactionms.controller.dto.WithdrawRequestDTO;
 import com.alessandragodoy.transactionms.exception.AccountNotFoundException;
 import com.alessandragodoy.transactionms.exception.InsufficientFundsException;
-import com.alessandragodoy.transactionms.exception.InvalidParameterException;
 import com.alessandragodoy.transactionms.repository.TransactionRepository;
 import com.alessandragodoy.transactionms.service.TransactionService;
+import com.alessandragodoy.transactionms.service.TransactionServiceClient;
 import com.alessandragodoy.transactionms.utility.TransactionMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
-import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
+
+import static com.alessandragodoy.transactionms.utility.TransactionValidationUtils.*;
 
 /**
  * Implementation of the TransactionService interface.
@@ -25,9 +26,8 @@ import reactor.core.publisher.Mono;
 public class TransactionServiceImpl implements TransactionService {
 	private final TransactionRepository transactionRepository;
 	private final TransactionMapper transactionMapper;
-	private final WebClient webClient;
+	private final TransactionServiceClient transactionServiceClient;
 
-	/* Transaction Service methods */
 	@Override
 	public Flux<TransactionDTO> listAllTransactions() {
 		return transactionRepository.findAll().map(transactionMapper::toTransactionDTO);
@@ -35,45 +35,39 @@ public class TransactionServiceImpl implements TransactionService {
 
 	@Override
 	public Mono<TransactionDTO> registerDeposit(DepositRequestDTO deposit) {
-		if (deposit.destinationAccount() == null && deposit.amount() == null) {
-			throw new InvalidParameterException("Account and amount are required");
-		}
-		return verifyAccountNumber(deposit.destinationAccount())
+		return validateAccountNumber(deposit.destinationAccount())
+				.then(validateAmount(deposit.amount()))
+				.then(transactionServiceClient.verifyAccountNumber(deposit.destinationAccount()))
 				.flatMap(accountExists -> {
 					if (!accountExists) {
 						return Mono.error(new AccountNotFoundException("Account does not exist"));
 					}
-					if (deposit.amount() <= 0) {
-						return Mono.error(new InvalidParameterException("Amount must be greater than 0"));
-					}
 					return transactionRepository.save(transactionMapper.toDepositRequest(deposit))
-							.flatMap(savedTransaction -> updateAccountBalance(deposit.destinationAccount(),
-									deposit.amount())
+							.flatMap(savedTransaction -> transactionServiceClient.updateAccountBalance(
+											deposit.destinationAccount(),
+											deposit.amount())
 									.thenReturn(transactionMapper.toTransactionDTO(savedTransaction)));
 				});
 	}
 
 	@Override
 	public Mono<TransactionDTO> registerWithdraw(WithdrawRequestDTO withdraw) {
-		if (withdraw.originAccount() == null && withdraw.amount() == null) {
-			throw new InvalidParameterException("Account and amount are required");
-		}
-		return verifyAccountNumber(withdraw.originAccount())
+		return validateAccountNumber(withdraw.originAccount())
+				.then(validateAmount(withdraw.amount()))
+				.then(transactionServiceClient.verifyAccountNumber(withdraw.originAccount()))
 				.flatMap(accountExists -> {
 					if (!accountExists) {
 						return Mono.error(new AccountNotFoundException("Account does not exist"));
 					}
-					if (withdraw.amount() <= 0) {
-						return Mono.error(new InvalidParameterException("Amount must be greater than 0"));
-					}
-					return getAccountBalance(withdraw.originAccount())
+					return transactionServiceClient.getAccountBalance(withdraw.originAccount())
 							.flatMap(balance -> {
 								if (balance <= withdraw.amount()) {
 									return Mono.error(new InsufficientFundsException("Insufficient funds"));
 								}
 								return transactionRepository.save(transactionMapper.toWithdrawRequest(withdraw))
-										.flatMap(savedTransaction -> updateAccountBalance(withdraw.originAccount(),
-												-withdraw.amount())
+										.flatMap(savedTransaction -> transactionServiceClient.updateAccountBalance(
+														withdraw.originAccount(),
+														-withdraw.amount())
 												.thenReturn(transactionMapper.toTransactionDTO(savedTransaction)));
 							});
 				});
@@ -81,81 +75,34 @@ public class TransactionServiceImpl implements TransactionService {
 
 	@Override
 	public Mono<TransactionDTO> registerTransfer(TransferRequestDTO transfer) {
-		if (transfer.originAccount() == null && transfer.destinationAccount() == null && transfer.amount() == null) {
-			throw new InvalidParameterException("Account and amount are required");
-		}
-		if (transfer.originAccount().equals(transfer.destinationAccount())) {
-			throw new InvalidParameterException("Origin and destination accounts must be different");
-		}
-		return verifyAccountNumber(transfer.destinationAccount())
-				.flatMap(destinationAccountExists -> {
-					if (!destinationAccountExists) {
-						return Mono.error(new AccountNotFoundException("Destination account does not exist"));
+		return validateAccountNumber(transfer.originAccount())
+				.then(validateAccountNumber(transfer.destinationAccount()))
+				.then(validateAmount(transfer.amount()))
+				.then(validateDistinctAccounts(transfer.originAccount(), transfer.destinationAccount()))
+				.then(Mono.zip(
+						transactionServiceClient.verifyAccountNumber(transfer.originAccount()),
+						transactionServiceClient.verifyAccountNumber(transfer.destinationAccount())))
+				.flatMap(accounts -> {
+					boolean originExists = accounts.getT1();
+					boolean destinationExists = accounts.getT2();
+					if (!originExists || !destinationExists) {
+						return Mono.error(new AccountNotFoundException("One or both accounts do not exist"));
 					}
-					if (transfer.amount() <= 0) {
-						return Mono.error(new InvalidParameterException("Amount must be greater than 0"));
-					}
-					return getAccountBalance(transfer.originAccount())
+					return transactionServiceClient.getAccountBalance(transfer.originAccount())
 							.flatMap(balance -> {
 								if (balance < transfer.amount()) {
 									return Mono.error(new InsufficientFundsException("Insufficient funds"));
 								}
 								return transactionRepository.save(transactionMapper.toTransferRequest(transfer))
-										.flatMap(savedTransaction ->
-												Mono.when(
-														updateAccountBalance(transfer.originAccount(),
+										.flatMap(savedTransaction -> Mono.when(
+														transactionServiceClient.updateAccountBalance(transfer.originAccount(),
 																-transfer.amount()),
-														updateAccountBalance(transfer.destinationAccount(),
-																transfer.amount())
-												).thenReturn(transactionMapper.toTransactionDTO(savedTransaction)));
+														transactionServiceClient.updateAccountBalance(
+																transfer.destinationAccount(), transfer.amount())
+												)
+												.thenReturn(transactionMapper.toTransactionDTO(savedTransaction)));
 							});
 				});
-	}
-
-	/* Helper methods */
-
-	/**
-	 * Retrieves the balance of the specified account.
-	 *
-	 * @param accountNumber the account number to retrieve the balance for
-	 * @return a Mono emitting the account balance
-	 */
-	private Mono<Double> getAccountBalance(String accountNumber) {
-		return webClient.get()
-				.uri("/balance/{accountNumber}", accountNumber)
-				.retrieve()
-				.bodyToMono(Double.class)
-				.doOnError(error -> System.err.println("Error al obtener el balance: " + error.getMessage()));
-	}
-
-	/**
-	 * Verifies if the specified account number exists.
-	 *
-	 * @param accountNumber the account number to verify
-	 * @return a Mono emitting true if the account exists, false otherwise
-	 */
-	private Mono<Boolean> verifyAccountNumber(String accountNumber) {
-		return webClient.get()
-				.uri("/verify/{accountNumber}", accountNumber)
-				.retrieve()
-				.bodyToMono(Boolean.class)
-				.doOnError(
-						error -> System.err.println("Error al verificar el número de cuenta: " + error.getMessage()));
-	}
-
-	/**
-	 * Updates the balance of the specified account.
-	 *
-	 * @param accountNumber the account number to update the balance for
-	 * @param amount        the amount to update the balance by
-	 * @return a Mono indicating completion
-	 */
-	private Mono<Void> updateAccountBalance(String accountNumber, Double amount) {
-		return webClient.patch()
-				.uri("/update/{accountNumber}?amount={amount}", accountNumber, amount)
-				.retrieve()
-				.bodyToMono(Void.class)
-				.doOnError(error -> System.err.println("Error al actualizar el balance: " + error.getMessage()));
 	}
 
 }

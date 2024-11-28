@@ -24,4 +24,9 @@ public class GlobalExceptionHandler {
 	public ResponseEntity<String> handleInvalidParameterException(InvalidParameterException e) {
 		return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
 	}
+
+	@ExceptionHandler(ExternalServiceException.class)
+	public ResponseEntity<String> handleExternalServiceException(ExternalServiceException e) {
+		return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).body(e.getMessage());
+	}
 }
