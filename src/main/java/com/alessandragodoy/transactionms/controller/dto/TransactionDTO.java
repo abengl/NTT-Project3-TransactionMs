@@ -11,6 +11,13 @@ package com.alessandragodoy.transactionms.controller.dto;
  * @param originAccount      the charged account
  * @param destinationAccount the destination account
  **/
-public record TransactionDTO(String id, String accountNumber, String transactionType, Double amount, String date,
-							 String originAccount, String destinationAccount) {
+public record TransactionDTO(
+		String id,
+		String accountNumber,
+		String transactionType,
+		Double amount,
+		String date,
+		String originAccount,
+		String destinationAccount
+		) {
 }
