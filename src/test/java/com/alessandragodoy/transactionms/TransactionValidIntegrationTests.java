@@ -29,7 +29,7 @@ import static org.mockito.BDDMockito.given;
 
 @SpringJUnitConfig(Transaction.class)
 @SpringBootTest
-class TransactionMsApplicationTests {
+class TransactionValidIntegrationTests {
 	@Mock
 	TransactionService transactionService;
 	WebTestClient webTestClient;
