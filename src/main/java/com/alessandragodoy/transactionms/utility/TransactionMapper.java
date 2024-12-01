@@ -18,14 +18,6 @@ import java.util.Optional;
 @Component
 public class TransactionMapper {
 
-	private Date parseDate(String date) {
-		return date != null ? Date.from(Instant.parse(date)) : null;
-	}
-
-	private String formatDate(Date date) {
-		return date != null ? date.toInstant().toString() : null;
-	}
-
 	public TransactionDTO toTransactionDTO(Transaction transaction) {
 		return Optional.ofNullable(transaction)
 				.map(t -> new TransactionDTO(
@@ -40,6 +32,10 @@ public class TransactionMapper {
 				.orElse(null);
 	}
 
+	private String formatDate(Date date) {
+		return date != null ? date.toInstant().toString() : null;
+	}
+
 	public Transaction toEntity(TransactionDTO transactionDTO) {
 		return Optional.ofNullable(transactionDTO)
 				.map(dto -> new Transaction(
@@ -52,6 +48,10 @@ public class TransactionMapper {
 						dto.destinationAccount()
 				))
 				.orElse(null);
+	}
+
+	private Date parseDate(String date) {
+		return date != null ? Date.from(Instant.parse(date)) : null;
 	}
 
 	public Transaction toDepositRequest(DepositRequestDTO depositRequestDTO) {
