@@ -11,7 +11,7 @@ servers:
     description: Local server
 
 paths:
-  /transactions/deposit:
+  /api/v1/transactions/deposit:
     post:
       summary: Register a deposit
       operationId: deposit
@@ -37,7 +37,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/AccountNotFoundException'
 
-  /transactions/withdraw:
+  /api/v1/transactions/withdraw:
     post:
       summary: Register a withdrawal
       operationId: withdraw
@@ -63,7 +63,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/AccountNotFoundException'
 
-  /transactions/transfer:
+  /api/v1/transactions/transfer:
     post:
       summary: Register a transfer
       operationId: transfer
@@ -89,7 +89,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/AccountNotFoundException'
 
-  /transactions/history:
+  /api/v1/transactions:
     get:
       summary: Query transaction history
       operationId: history

@@ -1,5 +1,7 @@
 package com.alessandragodoy.transactionms.controller.dto;
 
+import io.swagger.v3.oas.annotations.media.Schema;
+
 /**
  * A Data Transfer Object for transactions.
  *
@@ -11,6 +13,19 @@ package com.alessandragodoy.transactionms.controller.dto;
  * @param originAccount      the charged account
  * @param destinationAccount the destination account
  **/
-public record TransactionDTO(String id, String accountNumber, String transactionType, Double amount, String date,
-							 String originAccount, String destinationAccount) {
+public record TransactionDTO(
+		@Schema(description = "Unique identifier for the transaction", example = "1")
+		String id,
+		@Schema(description = "Primary account number", example = "A000001")
+		String accountNumber,
+		@Schema(description = "Type of the transaction", example = "DEPOSIT")
+		String transactionType,
+		@Schema(description = "Amount of the transaction", example = "100.0")
+		Double amount,
+		@Schema(description = "Date of the transaction", example = "2021-01-01")
+		String date,
+		@Schema(description = "Charged account", example = "A000001")
+		String originAccount,
+		@Schema(description = "Destination account", example = "A000002")
+		String destinationAccount) {
 }
