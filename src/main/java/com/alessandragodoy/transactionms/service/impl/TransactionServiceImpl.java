@@ -1,5 +1,6 @@
 package com.alessandragodoy.transactionms.service.impl;
 
+import com.alessandragodoy.transactionms.adapter.TransactionAdapter;
 import com.alessandragodoy.transactionms.controller.dto.DepositRequestDTO;
 import com.alessandragodoy.transactionms.controller.dto.TransactionDTO;
 import com.alessandragodoy.transactionms.controller.dto.TransferRequestDTO;
@@ -8,7 +9,6 @@ import com.alessandragodoy.transactionms.exception.AccountNotFoundException;
 import com.alessandragodoy.transactionms.exception.InsufficientFundsException;
 import com.alessandragodoy.transactionms.repository.TransactionRepository;
 import com.alessandragodoy.transactionms.service.TransactionService;
-import com.alessandragodoy.transactionms.service.TransactionServiceClient;
 import com.alessandragodoy.transactionms.utility.TransactionMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -26,7 +26,7 @@ import static com.alessandragodoy.transactionms.utility.TransactionValidationUti
 public class TransactionServiceImpl implements TransactionService {
 	private final TransactionRepository transactionRepository;
 	private final TransactionMapper transactionMapper;
-	private final TransactionServiceClient transactionServiceClient;
+	private final TransactionAdapter transactionAdapter;
 
 	@Override
 	public Flux<TransactionDTO> listAllTransactions() {
@@ -37,13 +37,13 @@ public class TransactionServiceImpl implements TransactionService {
 	public Mono<TransactionDTO> registerDeposit(DepositRequestDTO deposit) {
 		return validateAccountNumber(deposit.destinationAccount())
 				.then(validateAmount(deposit.amount()))
-				.then(transactionServiceClient.verifyAccountNumber(deposit.destinationAccount()))
+				.then(transactionAdapter.verifyAccountNumber(deposit.destinationAccount()))
 				.flatMap(accountExists -> {
 					if (!accountExists) {
 						return Mono.error(new AccountNotFoundException("Account does not exist"));
 					}
 					return transactionRepository.save(transactionMapper.toDepositRequest(deposit))
-							.flatMap(savedTransaction -> transactionServiceClient.updateAccountBalance(
+							.flatMap(savedTransaction -> transactionAdapter.updateAccountBalance(
 											deposit.destinationAccount(),
 											deposit.amount())
 									.thenReturn(transactionMapper.toTransactionDTO(savedTransaction)));
@@ -54,18 +54,18 @@ public class TransactionServiceImpl implements TransactionService {
 	public Mono<TransactionDTO> registerWithdraw(WithdrawRequestDTO withdraw) {
 		return validateAccountNumber(withdraw.originAccount())
 				.then(validateAmount(withdraw.amount()))
-				.then(transactionServiceClient.verifyAccountNumber(withdraw.originAccount()))
+				.then(transactionAdapter.verifyAccountNumber(withdraw.originAccount()))
 				.flatMap(accountExists -> {
 					if (!accountExists) {
 						return Mono.error(new AccountNotFoundException("Account does not exist"));
 					}
-					return transactionServiceClient.getAccountBalance(withdraw.originAccount())
+					return transactionAdapter.getAccountBalance(withdraw.originAccount())
 							.flatMap(balance -> {
 								if (balance <= withdraw.amount()) {
 									return Mono.error(new InsufficientFundsException("Insufficient funds"));
 								}
 								return transactionRepository.save(transactionMapper.toWithdrawRequest(withdraw))
-										.flatMap(savedTransaction -> transactionServiceClient.updateAccountBalance(
+										.flatMap(savedTransaction -> transactionAdapter.updateAccountBalance(
 														withdraw.originAccount(),
 														-withdraw.amount())
 												.thenReturn(transactionMapper.toTransactionDTO(savedTransaction)));
@@ -80,24 +80,24 @@ public class TransactionServiceImpl implements TransactionService {
 				.then(validateAmount(transfer.amount()))
 				.then(validateDistinctAccounts(transfer.originAccount(), transfer.destinationAccount()))
 				.then(Mono.zip(
-						transactionServiceClient.verifyAccountNumber(transfer.originAccount()),
-						transactionServiceClient.verifyAccountNumber(transfer.destinationAccount())))
+						transactionAdapter.verifyAccountNumber(transfer.originAccount()),
+						transactionAdapter.verifyAccountNumber(transfer.destinationAccount())))
 				.flatMap(accounts -> {
 					boolean originExists = accounts.getT1();
 					boolean destinationExists = accounts.getT2();
 					if (!originExists || !destinationExists) {
 						return Mono.error(new AccountNotFoundException("One or both accounts do not exist"));
 					}
-					return transactionServiceClient.getAccountBalance(transfer.originAccount())
+					return transactionAdapter.getAccountBalance(transfer.originAccount())
 							.flatMap(balance -> {
 								if (balance < transfer.amount()) {
 									return Mono.error(new InsufficientFundsException("Insufficient funds"));
 								}
 								return transactionRepository.save(transactionMapper.toTransferRequest(transfer))
 										.flatMap(savedTransaction -> Mono.when(
-														transactionServiceClient.updateAccountBalance(transfer.originAccount(),
+														transactionAdapter.updateAccountBalance(transfer.originAccount(),
 																-transfer.amount()),
-														transactionServiceClient.updateAccountBalance(
+														transactionAdapter.updateAccountBalance(
 																transfer.destinationAccount(), transfer.amount())
 												)
 												.thenReturn(transactionMapper.toTransactionDTO(savedTransaction)));

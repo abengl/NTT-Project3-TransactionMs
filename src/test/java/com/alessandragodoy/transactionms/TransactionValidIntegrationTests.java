@@ -58,7 +58,7 @@ class TransactionValidIntegrationTests {
 		given(transactionService.listAllTransactions()).willReturn(Flux.fromIterable(transactions));
 
 		webTestClient.get()
-				.uri("/api/transactions")
+				.uri("/api/v1/transactions")
 				.accept(MediaType.APPLICATION_JSON)
 				.exchange()
 				.expectStatus().isOk()
@@ -79,7 +79,7 @@ class TransactionValidIntegrationTests {
 		given(transactionService.registerDeposit(depositRequestDTO)).willReturn(Mono.just(transactionResponse));
 
 		webTestClient.post()
-				.uri("/api/transactions/deposit")
+				.uri("/api/v1/transactions/deposit")
 				.contentType(MediaType.APPLICATION_JSON)
 				.bodyValue(depositRequestDTO)
 				.exchange()
@@ -96,7 +96,7 @@ class TransactionValidIntegrationTests {
 		given(transactionService.registerWithdraw(withdrawRequestDTO)).willReturn(Mono.just(transactionResponse));
 
 		webTestClient.post()
-				.uri("/api/transactions/withdraw")
+				.uri("/api/v1/transactions/withdraw")
 				.contentType(MediaType.APPLICATION_JSON)
 				.bodyValue(withdrawRequestDTO)
 				.exchange()
@@ -113,7 +113,7 @@ class TransactionValidIntegrationTests {
 		given(transactionService.registerTransfer(transferRequestDTO)).willReturn(Mono.just(transactionResponse));
 
 		webTestClient.post()
-				.uri("/api/transactions/transfer")
+				.uri("/api/v1/transactions/transfer")
 				.contentType(MediaType.APPLICATION_JSON)
 				.bodyValue(transferRequestDTO)
 				.exchange()

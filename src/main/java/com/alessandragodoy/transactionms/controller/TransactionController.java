@@ -16,7 +16,7 @@ import reactor.core.publisher.Mono;
  */
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("/api/transactions")
+@RequestMapping("/api/v1/transactions")
 public class TransactionController {
 	private final TransactionService transactionService;
 

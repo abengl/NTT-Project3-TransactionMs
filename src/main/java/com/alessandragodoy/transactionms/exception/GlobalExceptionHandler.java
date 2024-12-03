@@ -14,7 +14,7 @@ public class GlobalExceptionHandler {
 	 * Handles AccountNotFoundException.
 	 *
 	 * @param e the exception
-	 * @return the response entity with NOT_FOUND status and exception message
+	 * @return the response entity with NOT FOUND status and exception message.
 	 */
 	@ExceptionHandler(AccountNotFoundException.class)
 	public ResponseEntity<String> handleAccountNotFoundException(AccountNotFoundException e) {
@@ -36,7 +36,7 @@ public class GlobalExceptionHandler {
 	 * Handles InvalidParameterException.
 	 *
 	 * @param e the exception
-	 * @return the response entity with BAD_REQUEST status and exception message
+	 * @return the response entity with BAD REQUEST status and exception message.
 	 */
 	@ExceptionHandler(InvalidParameterException.class)
 	public ResponseEntity<String> handleInvalidParameterException(InvalidParameterException e) {
@@ -47,7 +47,7 @@ public class GlobalExceptionHandler {
 	 * Handles ExternalServiceException.
 	 *
 	 * @param e the exception
-	 * @return the response entity with SERVICE_UNAVAILABLE status and exception message
+	 * @return the response entity with SERVICE UNAVAILABLE status and exception message.
 	 */
 	@ExceptionHandler(ExternalServiceException.class)
 	public ResponseEntity<String> handleExternalServiceException(ExternalServiceException e) {

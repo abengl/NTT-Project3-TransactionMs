@@ -1,8 +1,8 @@
-package com.alessandragodoy.transactionms.service;
+package com.alessandragodoy.transactionms.adapter;
 
 import com.alessandragodoy.transactionms.exception.ExternalServiceException;
 import lombok.RequiredArgsConstructor;
-import org.springframework.stereotype.Service;
+import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.reactive.function.client.WebClientRequestException;
 import reactor.core.publisher.Mono;
@@ -10,7 +10,7 @@ import reactor.core.publisher.Mono;
 /**
  * Service client for handling transactions.
  */
-@Service
+@Component
 @RequiredArgsConstructor
 public class TransactionServiceClient {
 
@@ -20,7 +20,7 @@ public class TransactionServiceClient {
 	 * Verifies if the given account number is valid.
 	 *
 	 * @param accountNumber the account number to verify
-	 * @return a Mono emitting true if the account number is valid, false otherwise
+	 * @return a Mono emitting true if the account number is valid, false otherwise.
 	 */
 	public Mono<Boolean> verifyAccountNumber(String accountNumber) {
 		return webClient.get().uri("/verify/{accountNumber}", accountNumber).retrieve().bodyToMono(Boolean.class)

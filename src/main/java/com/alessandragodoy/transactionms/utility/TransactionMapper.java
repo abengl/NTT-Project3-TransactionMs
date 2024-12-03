@@ -8,7 +8,6 @@ import com.alessandragodoy.transactionms.model.Transaction;
 import com.alessandragodoy.transactionms.model.TransactionType;
 import org.springframework.stereotype.Component;
 
-import java.time.Instant;
 import java.util.Date;
 import java.util.Optional;
 
@@ -34,24 +33,6 @@ public class TransactionMapper {
 
 	private String formatDate(Date date) {
 		return date != null ? date.toInstant().toString() : null;
-	}
-
-	public Transaction toEntity(TransactionDTO transactionDTO) {
-		return Optional.ofNullable(transactionDTO)
-				.map(dto -> new Transaction(
-						dto.id(),
-						dto.accountNumber(),
-						TransactionType.valueOf(dto.transactionType()),
-						dto.amount(),
-						parseDate(dto.date()),
-						dto.originAccount(),
-						dto.destinationAccount()
-				))
-				.orElse(null);
-	}
-
-	private Date parseDate(String date) {
-		return date != null ? Date.from(Instant.parse(date)) : null;
 	}
 
 	public Transaction toDepositRequest(DepositRequestDTO depositRequestDTO) {
